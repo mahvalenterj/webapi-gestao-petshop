@@ -1,7 +1,6 @@
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging.Configuration;
 using PetShop.Api.Database;
 using PetShop.Api.Domain.Entities;
 using PetShop.Api.Domain.Models.Base;
@@ -22,7 +21,7 @@ namespace PetShop.Api.Controllers
     {
         private readonly IPetShopDbContext petShopDbContext;
         private readonly ILogger<EmployeeController> logger;
-        //PetShop.Api.Controllers.EmployeeController
+
         public EmployeeController(IPetShopDbContext petShopDbContext, ILogger<EmployeeController> logger)
         {
             this.petShopDbContext = petShopDbContext;
@@ -35,7 +34,7 @@ namespace PetShop.Api.Controllers
         /// <response code="200">Colecao de Employees. Pode ser uma colecao 
         /// vazia caso nao existam employees cadastrados.</response>
         [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(GetEmployeeResponse), StatusCodes.Status200OK)]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<IActionResult> Get(CancellationToken cancellationToken)
         {
@@ -63,8 +62,8 @@ namespace PetShop.Api.Controllers
         /// <response code="200">Retorna os dados do colaborador, quando encontrado.</response>
         /// <response code="404">Colaborador nï¿½o encontrado</response>
         [HttpGet("{id:int}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(GetEmployeeByIdResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
         {
@@ -91,8 +90,8 @@ namespace PetShop.Api.Controllers
         /// <response code="201">Retorna o objeto recêm criado</response>
         /// <response code="400">Retorna um BadRequest se os dados da request são inválidos</response>
         [HttpPost]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(CreateEmployeeResponse), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<IActionResult> CreateEmployee(CreateEmployeeRequest request, CancellationToken cancellationToken)
         {
@@ -127,7 +126,18 @@ namespace PetShop.Api.Controllers
             return CreatedAtAction(nameof(GetById), new { id = entity.Id }, responseModel);
         }
 
+        /// <summary>
+        /// Atualiza nome e e-mail do colaborador informado.
+        /// </summary>
+        /// <param name="request">Dados do colaborador a serem atualizados.</param>
+        /// <response code="200">Colaborador atualizado com sucesso.</response>
+        /// <response code="404">Colaborador não encontrado.</response>
+        /// <response code="422">Dados do colaborador inválidos.</response>
         [HttpPut]
+        [ProducesResponseType(typeof(UpdateEmployeeResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+        [Produces(MediaTypeNames.Application.Json)]
         public async Task<IActionResult> UpdateEmployee(UpdateEmployeeRequest request, CancellationToken cancellationToken)
         {
             var model = await petShopDbContext.Employees
@@ -135,7 +145,7 @@ namespace PetShop.Api.Controllers
 
             if (model is null)
             {
-                return BadRequest();
+                return NotFound();
             }
 
             model.Name = request.EmployeeName;
@@ -152,7 +162,15 @@ namespace PetShop.Api.Controllers
             return Ok(entityResponse);
         }
 
+        /// <summary>
+        /// Remove o colaborador com o ID informado.
+        /// </summary>
+        /// <param name="id">Id do Colaborador</param>
+        /// <response code="204">Colaborador removido.</response>
+        /// <response code="404">Colaborador não encontrado.</response>
         [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
             logger.LogTrace("Iniciou o método Delete");
@@ -161,15 +179,14 @@ namespace PetShop.Api.Controllers
 
             if (entity is null)
             {
-                return BadRequest();
+                return NotFound();
             }
-
-            logger.LogTrace(LogEvents.PostEndpoint, "Finalizou o evento de Delete Employee");
 
             petShopDbContext.Employees.Remove(entity);
             await petShopDbContext.SaveChangesAsync(cancellationToken);
 
-            return Ok();
+            logger.LogTrace("Finalizou o método Delete");
+            return NoContent();
         }
     }
 }

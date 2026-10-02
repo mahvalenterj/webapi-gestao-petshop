@@ -30,8 +30,8 @@ namespace PetShop.Api.Controllers
         /// <response code="200">Retorna os dados do pet, quando encontrado.</response>
         /// <response code="404">Pet não encontrado.</response>
         [HttpGet("{id:int}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(GetPetByIdResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
         {
