@@ -12,7 +12,7 @@ using System.Net.Mime;
 namespace PetShop.Api.Controllers
 {
     /// <summary>
-    /// Controller utilizado para operaÔøΩÔøΩes de CRUD de Colaboradores
+    /// Controller utilizado para opera√ß√µes de CRUD de Colaboradores
     /// </summary>
     [ApiController]
     [Route("api/employees")]
@@ -38,7 +38,7 @@ namespace PetShop.Api.Controllers
         [Produces(MediaTypeNames.Application.Json)]
         public async Task<IActionResult> Get(CancellationToken cancellationToken)
         {
-            logger.LogTrace("Iniciou o mÈtodo Get");
+            logger.LogTrace("Iniciou o m√©todo Get");
 
             var employees = new GetEmployeeResponse();
 
@@ -51,7 +51,7 @@ namespace PetShop.Api.Controllers
                 })
                 .ToListAsync(cancellationToken);
 
-            logger.LogTrace("Finalizou o mÈtodo Get");
+            logger.LogTrace("Finalizou o m√©todo Get");
             return Ok(employees);
         }
 
@@ -60,7 +60,7 @@ namespace PetShop.Api.Controllers
         /// </summary>
         /// <param name="id">Id do Colaborador</param>
         /// <response code="200">Retorna os dados do colaborador, quando encontrado.</response>
-        /// <response code="404">Colaborador nÔøΩo encontrado</response>
+        /// <response code="404">Colaborador n√£o encontrado</response>
         [HttpGet("{id:int}")]
         [ProducesResponseType(typeof(GetEmployeeByIdResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -87,8 +87,8 @@ namespace PetShop.Api.Controllers
         /// Cria um novo Employee no banco de dados.
         /// </summary>
         /// <param name="request">Dados do Employee</param>
-        /// <response code="201">Retorna o objeto recÍm criado</response>
-        /// <response code="400">Retorna um BadRequest se os dados da request s„o inv·lidos</response>
+        /// <response code="201">Retorna o objeto rec√©m criado</response>
+        /// <response code="422">Retorna os erros de valida√ß√£o se os dados da request s√£o inv√°lidos</response>
         [HttpPost]
         [ProducesResponseType(typeof(CreateEmployeeResponse), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status422UnprocessableEntity)]
@@ -131,8 +131,8 @@ namespace PetShop.Api.Controllers
         /// </summary>
         /// <param name="request">Dados do colaborador a serem atualizados.</param>
         /// <response code="200">Colaborador atualizado com sucesso.</response>
-        /// <response code="404">Colaborador n„o encontrado.</response>
-        /// <response code="422">Dados do colaborador inv·lidos.</response>
+        /// <response code="404">Colaborador n√£o encontrado.</response>
+        /// <response code="422">Dados do colaborador inv√°lidos.</response>
         [HttpPut]
         [ProducesResponseType(typeof(UpdateEmployeeResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -167,13 +167,13 @@ namespace PetShop.Api.Controllers
         /// </summary>
         /// <param name="id">Id do Colaborador</param>
         /// <response code="204">Colaborador removido.</response>
-        /// <response code="404">Colaborador n„o encontrado.</response>
+        /// <response code="404">Colaborador n√£o encontrado.</response>
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
-            logger.LogTrace("Iniciou o mÈtodo Delete");
+            logger.LogTrace("Iniciou o m√©todo Delete");
 
             var entity = await petShopDbContext.Employees.FindAsync(new object[] { id }, cancellationToken);
 
@@ -185,7 +185,7 @@ namespace PetShop.Api.Controllers
             petShopDbContext.Employees.Remove(entity);
             await petShopDbContext.SaveChangesAsync(cancellationToken);
 
-            logger.LogTrace("Finalizou o mÈtodo Delete");
+            logger.LogTrace("Finalizou o m√©todo Delete");
             return NoContent();
         }
     }

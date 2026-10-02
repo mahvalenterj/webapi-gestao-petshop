@@ -7,7 +7,7 @@ using System.Net.Mime;
 namespace PetShop.Api.Controllers
 {
     /// <summary>
-    /// Controller utilizado para operaçôes de CRUD de Pets
+    /// Controller utilizado para operações de CRUD de Pets
     /// </summary>
     [ApiController]
     [Route("api/pets")]
