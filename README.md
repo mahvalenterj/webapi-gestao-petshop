@@ -84,7 +84,6 @@ Os testes sobem a API em memória com `WebApplicationFactory` e substituem o SQL
 
 ## Próximos passos
 
-- Criar migration que adicione as colunas `Price` e `Quantity` à tabela `Products`: elas existem no modelo, mas não nas migrations atuais, e os endpoints de produtos falham em um banco criado do zero.
 - Tornar `Price` e `Quantity` tipos numéricos (`decimal` e `int`).
 - Extrair a regra de negócio dos controllers para uma camada de serviços.
 - Atualizar o projeto para .NET 8.
