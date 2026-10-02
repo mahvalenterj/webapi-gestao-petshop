@@ -25,10 +25,10 @@ namespace PetShop.Api
                 {
                     options.InvalidModelStateResponseFactory = context =>
                     {
-                        var defaultProblemDetailsFactory = context.HttpContext.RequestServices.GetService<ProblemDetailsFactory>();
+                        var defaultProblemDetailsFactory = context.HttpContext.RequestServices.GetRequiredService<ProblemDetailsFactory>();
                         var problemDetails = defaultProblemDetailsFactory.CreateValidationProblemDetails(context.HttpContext, context.ModelState);
 
-                        problemDetails.Title = "Ocorreram erros de validação";
+                        problemDetails.Title = "Ocorreram erros de validaÃ§Ã£o";
                         problemDetails.Status = StatusCodes.Status422UnprocessableEntity;
 
                         return new UnprocessableEntityObjectResult(problemDetails);
@@ -55,8 +55,8 @@ namespace PetShop.Api
             {
                 var openApiInfo = new OpenApiInfo();
 
-                openApiInfo.Title = "Documentação de WebApi Petshop";
-                openApiInfo.Description = "A documentação relata os métodos e utilizações desta API";
+                openApiInfo.Title = "DocumentaÃ§Ã£o de WebApi Petshop";
+                openApiInfo.Description = "A documentaÃ§Ã£o relata os mÃ©todos e utilizaÃ§Ãµes desta API";
                 openApiInfo.License = new OpenApiLicense
                 {
                     Name = "MIT",

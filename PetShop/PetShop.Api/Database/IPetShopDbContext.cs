@@ -11,5 +11,6 @@ namespace PetShop.Api.Database
         DbSet<Product> Products { get; set; }
         DbSet<Inventory> Inventory { get; set; }
         int SaveChanges();
+        Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

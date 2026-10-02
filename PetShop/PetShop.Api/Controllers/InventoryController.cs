@@ -1,9 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PetShop.Api.Database;
-using PetShop.Api.Domain.Entities;
 using PetShop.Api.Domain.Models.Base;
-using PetShop.Api.Domain.Models.Requests;
 using PetShop.Api.Domain.Models.Responses;
 using System.Net.Mime;
 
@@ -22,32 +20,30 @@ namespace PetShop.Api.Controllers
             this.logger = logger;
         }
 
+        /// <summary>
+        /// Retorna os itens do estoque com seus produtos e quantidades.
+        /// </summary>
+        /// <response code="200">Lista de itens do estoque. Pode ser uma lista vazia.</response>
         [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(GetInventoryResponse), StatusCodes.Status200OK)]
         [Produces(MediaTypeNames.Application.Json)]
-        public IActionResult Get()
+        public async Task<IActionResult> Get(CancellationToken cancellationToken)
         {
             logger.LogTrace("Iniciou o método Get");
-            try
-            {
-                var entity = new Domain.Models.Responses.GetInventoryResponse();
 
-                entity.Inventory = petShopDbContext.Inventory.Select(x => new InventoryBaseModel
+            var entity = new GetInventoryResponse();
+
+            entity.Inventory = await petShopDbContext.Inventory
+                .AsNoTracking()
+                .Select(x => new InventoryBaseModel
                 {
                     Product = x.Product,
                     Quantity = x.Quantity,
-                });
+                })
+                .ToListAsync(cancellationToken);
 
-                logger.LogTrace("Finalizou o método Get");
-
-                return Ok(entity);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Erro no método GET Inventory");
-                throw;
-            }
-
+            logger.LogTrace("Finalizou o método Get");
+            return Ok(entity);
         }
     }
 }

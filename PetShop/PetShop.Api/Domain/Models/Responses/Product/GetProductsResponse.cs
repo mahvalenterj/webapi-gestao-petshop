@@ -2,7 +2,7 @@
 
 namespace PetShop.Api.Domain.Models.Responses.Product
 {
-    public class GetProductsResponse : ProductBaseModel
+    public class GetProductsResponse
     {
         public IEnumerable<ProductBaseModel> Products { get; set; }
     }

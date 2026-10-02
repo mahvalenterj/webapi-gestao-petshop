@@ -7,6 +7,6 @@ namespace PetShop.Api.Domain.Models.Base
         public string ClientName { get; set; }
         public string ClientEmail { get; set; }
         public string ClientCpf { get; set; }
-        public List<Pet> ClientPets { get; set; }
+        public List<Pet>? ClientPets { get; set; }
     }
 }

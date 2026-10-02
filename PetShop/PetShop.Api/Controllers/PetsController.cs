@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using PetShop.Api.Database;
 using PetShop.Api.Domain.Models.Responses.Pet;
 using System.Net.Mime;
@@ -6,7 +7,7 @@ using System.Net.Mime;
 namespace PetShop.Api.Controllers
 {
     /// <summary>
-    /// Controller utilizado para operaçôes de CRUD de Pets
+    /// Controller utilizado para operações de CRUD de Pets
     /// </summary>
     [ApiController]
     [Route("api/pets")]
@@ -29,13 +30,16 @@ namespace PetShop.Api.Controllers
         /// <response code="200">Retorna os dados do pet, quando encontrado.</response>
         /// <response code="404">Pet não encontrado.</response>
         [HttpGet("{id:int}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(GetPetByIdResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [Produces(MediaTypeNames.Application.Json)]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
         {
             logger.LogTrace("Iniciou o método GetById");
-            var entity = petShopDbContext.Pets.Find(id);
+
+            var entity = await petShopDbContext.Pets
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
             if (entity == null)
                 return NotFound();

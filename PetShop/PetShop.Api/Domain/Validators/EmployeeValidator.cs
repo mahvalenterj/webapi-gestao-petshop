@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using PetShop.Api.Database;
 using PetShop.Api.Domain.Entities;
 
@@ -17,17 +18,16 @@ namespace PetShop.Api.Domain.Validators
 
             RuleFor(x => x.Email)
                 .NotEmpty()
-                .Must(ValidaEmailUnico)
+                .MustAsync(ValidaEmailUnico)
                     .WithMessage("E-mail já cadastrado")
                 .EmailAddress()
                     .WithMessage("É obrigatório um e-mail válido");
             this.context = context;
         }
 
-        private bool ValidaEmailUnico(string arg1)
+        private async Task<bool> ValidaEmailUnico(string? email, CancellationToken cancellationToken)
         {
-            var inUse = context.Employees.Any(x => x.Email == arg1);
-
+            var inUse = await context.Employees.AnyAsync(x => x.Email == email, cancellationToken);
 
             return !inUse;
         }

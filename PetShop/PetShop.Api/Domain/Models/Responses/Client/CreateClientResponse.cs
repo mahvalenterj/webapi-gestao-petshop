@@ -1,8 +1,11 @@
-﻿using PetShop.Api.Domain.Models.Base;
-
-namespace PetShop.Api.Domain.Models.Responses.Client
+﻿namespace PetShop.Api.Domain.Models.Responses.Client
 {
-    public class CreateClientResponse : ClientBaseModel
+    public class CreateClientResponse
     {
+        public string? ClientName { get; set; }
+
+        public string? ClientEmail { get; set; }
+
+        public string? ClientCpf { get; set; }
     }
 }

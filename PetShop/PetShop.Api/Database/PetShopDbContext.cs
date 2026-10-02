@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PetShop.Api.Domain.Entities;
 
 namespace PetShop.Api.Database
-{   
+{
     //Contexto de banco de dados
     public class PetShopDbContext : DbContext, IPetShopDbContext
     {
@@ -17,10 +17,11 @@ namespace PetShop.Api.Database
         public DbSet<Pet> Pets { get; set; }
         public DbSet<Inventory> Inventory { get; set; }
 
-        // Implementação explícita do método da interface IPetShopDbContext
-        int IPetShopDbContext.SaveChanges()
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            return base.SaveChanges();
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Product>().HasQueryFilter(p => !p.IsDeleted);
         }
     }
 }
