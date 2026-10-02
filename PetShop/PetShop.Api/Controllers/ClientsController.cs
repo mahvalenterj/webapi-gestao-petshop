@@ -33,29 +33,24 @@ namespace PetShop.Api.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [Produces(MediaTypeNames.Application.Json)]
-        public IActionResult Get()
+        public async Task<IActionResult> Get(CancellationToken cancellationToken)
         {
             logger.LogTrace("Iniciou o método Get");
-            try
-            {
-                var clients = new GetClientResponse();
 
-                clients.Clients = petShopDbContext.Clients
-                    .Select(x => new ClientBaseModel
-                    {
-                        ClientName = x.Name,
-                        ClientEmail = x.Email,
-                        ClientCpf = x.Cpf
-                    });
-                logger.LogTrace("Finalizou o método Get");
-                return Ok(clients);
-            } 
-            catch (Exception ex)
-            {
-                logger.LogTrace(ex, "Ocorreu um erro no método Get Clients");
-                throw;
-            }           
-            
+            var clients = new GetClientResponse();
+
+            clients.Clients = await petShopDbContext.Clients
+                .AsNoTracking()
+                .Select(x => new ClientBaseModel
+                {
+                    ClientName = x.Name,
+                    ClientEmail = x.Email,
+                    ClientCpf = x.Cpf
+                })
+                .ToListAsync(cancellationToken);
+
+            logger.LogTrace("Finalizou o método Get");
+            return Ok(clients);
         }
 
         /// <summary>
@@ -68,34 +63,27 @@ namespace PetShop.Api.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [Produces(MediaTypeNames.Application.Json)]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
         {
             logger.LogTrace("Iniciou o método Get por Id");
 
-            try
+            var entity = await petShopDbContext.Clients
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+            if (entity == null)
+                return NotFound();
+
+            var model = new GetClientByIdResponse
             {
-                var entity = petShopDbContext.Clients.Find(id);
+                ClientName = entity.Name,
+                ClientEmail = entity.Email,
+                ClientCpf = entity.Cpf,
+                ClientPets = entity.Pets
+            };
 
-                if (entity == null)
-                    return NotFound();
-
-                var model = new GetClientByIdResponse
-                {
-                    ClientName = entity.Name,
-                    ClientEmail = entity.Email,
-                    ClientCpf = entity.Cpf,
-                    ClientPets = entity.Pets
-                };
-
-                logger.LogTrace("Finalizou o método Get por Id");
-
-                return Ok(model);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Ocorreu um erro no método Get Clients por Id");
-                throw;
-            }
+            logger.LogTrace("Finalizou o método Get por Id");
+            return Ok(model);
         }
 
         /// <summary>
@@ -108,9 +96,8 @@ namespace PetShop.Api.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [Produces(MediaTypeNames.Application.Json)]
-        public async Task<IActionResult> CreateClient([FromBody] CreateClientRequest request)
+        public async Task<IActionResult> CreateClient([FromBody] CreateClientRequest request, CancellationToken cancellationToken)
         {
-
             var entity = new Client
             {
                 Name = request.ClientName,
@@ -122,7 +109,7 @@ namespace PetShop.Api.Controllers
 
             try
             {
-                petShopDbContext.SaveChanges();
+                await petShopDbContext.SaveChangesAsync(cancellationToken);
             }
             catch (DbUpdateException)
             {
@@ -132,42 +119,32 @@ namespace PetShop.Api.Controllers
             return CreatedAtAction(nameof(GetById), new { id = entity.Id }, entity);
         }
 
-
         [HttpPut]
-        public IActionResult UpdateClient(UpdateClientRequest request)
+        public async Task<IActionResult> UpdateClient(UpdateClientRequest request, CancellationToken cancellationToken)
         {
             logger.LogTrace("Iniciou o método Update");
 
-            try
+            var model = await petShopDbContext.Clients
+                .FindAsync(new object[] { request.Id }, cancellationToken);
+
+            if (model is null)
             {
-                var model = petShopDbContext.Clients
-                    .Find(request.Id);
-
-                if (model is null)
-                {
-                    return BadRequest();
-                }
-
-                model.Name = request.ClientName;
-                model.Email = request.ClientEmail;
-
-                petShopDbContext.Clients.Update(model);
-                petShopDbContext.SaveChanges();
-
-                var entityResponse = new UpdateClientResponse
-                {
-                    ClientEmail = request.ClientEmail,
-                    ClientName = request.ClientName
-                };
-
-                logger.LogTrace("Finalizou o método Update");
-                return Ok(entityResponse);
+                return BadRequest();
             }
-            catch (Exception ex)
+
+            model.Name = request.ClientName;
+            model.Email = request.ClientEmail;
+
+            await petShopDbContext.SaveChangesAsync(cancellationToken);
+
+            var entityResponse = new UpdateClientResponse
             {
-                logger.LogError(ex, "Ocorreu um erro no método Update Client");
-                throw;
-            }
+                ClientEmail = request.ClientEmail,
+                ClientName = request.ClientName
+            };
+
+            logger.LogTrace("Finalizou o método Update");
+            return Ok(entityResponse);
         }
 
         /// <summary>
@@ -175,9 +152,9 @@ namespace PetShop.Api.Controllers
         /// </summary>
         /// <response code="200">Retorna que um cliente foi excluido.</response>
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
-            var entity = petShopDbContext.Clients.Find(id);
+            var entity = await petShopDbContext.Clients.FindAsync(new object[] { id }, cancellationToken);
 
             if (entity is null)
             {
@@ -185,10 +162,9 @@ namespace PetShop.Api.Controllers
             }
 
             petShopDbContext.Clients.Remove(entity);
-            petShopDbContext.SaveChanges();
+            await petShopDbContext.SaveChangesAsync(cancellationToken);
 
             return Ok();
         }
-
     }
 }

@@ -1,5 +1,6 @@
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using PetShop.Api.Database;
 using PetShop.Api.Domain.Entities;
 using PetShop.Api.Domain.Models.Base;
@@ -34,7 +35,7 @@ namespace PetShop.Api.Controllers
         [ProducesResponseType(typeof(CreateProductResponse), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         [Produces(MediaTypeNames.Application.Json)]
-        public IActionResult CreateProduct([FromBody] CreateProductRequest request)
+        public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request, CancellationToken cancellationToken)
         {
             logger.LogTrace("Iniciou o método Post-Products");
 
@@ -47,7 +48,7 @@ namespace PetShop.Api.Controllers
             };
 
             var validator = new ProductValidator(petShopDbContext);
-            var validationResult = validator.Validate(entity);
+            var validationResult = await validator.ValidateAsync(entity, cancellationToken);
             if (!validationResult.IsValid)
             {
                 validationResult.AddToModelState(ModelState);
@@ -56,7 +57,7 @@ namespace PetShop.Api.Controllers
             }
 
             petShopDbContext.Products.Add(entity);
-            petShopDbContext.SaveChanges();
+            await petShopDbContext.SaveChangesAsync(cancellationToken);
 
             var responseModel = new CreateProductResponse
             {
@@ -80,15 +81,15 @@ namespace PetShop.Api.Controllers
         [HttpDelete("{id:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-        public IActionResult DeleteById(int id)
+        public async Task<IActionResult> DeleteById(int id, CancellationToken cancellationToken)
         {
-            var entity = petShopDbContext.Products.Find(id);
+            var entity = await petShopDbContext.Products.FindAsync(new object[] { id }, cancellationToken);
 
             if (entity == null)
                 return NotFound();
 
             entity.IsDeleted = true;
-            petShopDbContext.SaveChanges();
+            await petShopDbContext.SaveChangesAsync(cancellationToken);
 
             return NoContent();
         }
@@ -101,13 +102,14 @@ namespace PetShop.Api.Controllers
         [HttpGet]
         [ProducesResponseType(typeof(GetProductsResponse), StatusCodes.Status200OK)]
         [Produces(MediaTypeNames.Application.Json)]
-        public IActionResult GetProducts()
+        public async Task<IActionResult> GetProducts(CancellationToken cancellationToken)
         {
             logger.LogTrace("Iniciou o método Get Products.");
 
             var products = new GetProductsResponse();
 
-            products.Products = petShopDbContext.Products
+            products.Products = await petShopDbContext.Products
+               .AsNoTracking()
                .Select(x => new ProductBaseModel
                {
                    ProductId = x.Id,
@@ -116,7 +118,7 @@ namespace PetShop.Api.Controllers
                    ProductPrice = x.Price,
                    ProductQuantity = x.Quantity
                })
-               .ToList();
+               .ToListAsync(cancellationToken);
 
             logger.LogTrace("Finalizou o método Get Products.");
             return Ok(products);
@@ -132,11 +134,13 @@ namespace PetShop.Api.Controllers
         [ProducesResponseType(typeof(GetProductByIdResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [Produces(MediaTypeNames.Application.Json)]
-        public IActionResult GetProductById(int id)
+        public async Task<IActionResult> GetProductById(int id, CancellationToken cancellationToken)
         {
             logger.LogTrace("Iniciou o método get");
 
-            var entity = petShopDbContext.Products.Find(id);
+            var entity = await petShopDbContext.Products
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
             if (entity == null)
                 return NotFound();

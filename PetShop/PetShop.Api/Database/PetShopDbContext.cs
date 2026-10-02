@@ -23,11 +23,5 @@ namespace PetShop.Api.Database
 
             modelBuilder.Entity<Product>().HasQueryFilter(p => !p.IsDeleted);
         }
-
-        // Implementação explícita do método da interface IPetShopDbContext
-        int IPetShopDbContext.SaveChanges()
-        {
-            return base.SaveChanges();
-        }
     }
 }

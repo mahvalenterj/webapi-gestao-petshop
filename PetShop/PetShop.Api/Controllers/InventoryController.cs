@@ -25,29 +25,23 @@ namespace PetShop.Api.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [Produces(MediaTypeNames.Application.Json)]
-        public IActionResult Get()
+        public async Task<IActionResult> Get(CancellationToken cancellationToken)
         {
             logger.LogTrace("Iniciou o método Get");
-            try
-            {
-                var entity = new Domain.Models.Responses.GetInventoryResponse();
 
-                entity.Inventory = petShopDbContext.Inventory.Select(x => new InventoryBaseModel
+            var entity = new Domain.Models.Responses.GetInventoryResponse();
+
+            entity.Inventory = await petShopDbContext.Inventory
+                .AsNoTracking()
+                .Select(x => new InventoryBaseModel
                 {
                     Product = x.Product,
                     Quantity = x.Quantity,
-                });
+                })
+                .ToListAsync(cancellationToken);
 
-                logger.LogTrace("Finalizou o método Get");
-
-                return Ok(entity);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Erro no método GET Inventory");
-                throw;
-            }
-
+            logger.LogTrace("Finalizou o método Get");
+            return Ok(entity);
         }
     }
 }

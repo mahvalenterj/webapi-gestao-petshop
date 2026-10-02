@@ -1,5 +1,6 @@
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Configuration;
 using PetShop.Api.Database;
 using PetShop.Api.Domain.Entities;
@@ -36,31 +37,23 @@ namespace PetShop.Api.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [Produces(MediaTypeNames.Application.Json)]
-        public IActionResult Get()
+        public async Task<IActionResult> Get(CancellationToken cancellationToken)
         {
             logger.LogTrace("Iniciou o método Get");
 
-            try
-            {
-
             var employees = new GetEmployeeResponse();
 
-            employees.Employees = petShopDbContext.Employees
+            employees.Employees = await petShopDbContext.Employees
+                .AsNoTracking()
                 .Select(x => new EmployeeBaseModel
                 {
                     EmployeeEmail = x.Email,
                     EmployeeName = x.Name
-                });
+                })
+                .ToListAsync(cancellationToken);
 
             logger.LogTrace("Finalizou o método Get");
             return Ok(employees);
-
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Ocorreu um erro no método Get Employees");
-                throw;
-            }
         }
 
         /// <summary>
@@ -73,9 +66,11 @@ namespace PetShop.Api.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [Produces(MediaTypeNames.Application.Json)]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
         {
-            var entity = petShopDbContext.Employees.Find(id);
+            var entity = await petShopDbContext.Employees
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
             if (entity == null)
                 return NotFound();
@@ -99,9 +94,8 @@ namespace PetShop.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(CreateEmployeeResponse), StatusCodes.Status201Created)]
         [Produces(MediaTypeNames.Application.Json)]
-        public IActionResult CreateEmployee(CreateEmployeeRequest request)
+        public async Task<IActionResult> CreateEmployee(CreateEmployeeRequest request, CancellationToken cancellationToken)
         {
-
             logger.LogTrace(LogEvents.PostEndpoint, "Iniciou o evento de Post Employee");
 
             var entity = new Employee
@@ -111,7 +105,7 @@ namespace PetShop.Api.Controllers
             };
 
             var validator = new EmployeeValidator(petShopDbContext);
-            var validationResult = validator.Validate(entity);
+            var validationResult = await validator.ValidateAsync(entity, cancellationToken);
             if (!validationResult.IsValid)
             {
                 validationResult.AddToModelState(ModelState);
@@ -120,7 +114,7 @@ namespace PetShop.Api.Controllers
             }
 
             petShopDbContext.Employees.Add(entity);
-            petShopDbContext.SaveChanges();
+            await petShopDbContext.SaveChangesAsync(cancellationToken);
 
             var responseModel = new CreateEmployeeResponse
             {
@@ -134,10 +128,10 @@ namespace PetShop.Api.Controllers
         }
 
         [HttpPut]
-        public IActionResult UpdateEmployee(UpdateEmployeeRequest request)
+        public async Task<IActionResult> UpdateEmployee(UpdateEmployeeRequest request, CancellationToken cancellationToken)
         {
-            var model = petShopDbContext.Employees
-                .Find(request.Id);
+            var model = await petShopDbContext.Employees
+                .FindAsync(new object[] { request.Id }, cancellationToken);
 
             if (model is null)
             {
@@ -147,8 +141,7 @@ namespace PetShop.Api.Controllers
             model.Name = request.EmployeeName;
             model.Email = request.EmployeeEmail;
 
-            petShopDbContext.Employees.Update(model);
-            petShopDbContext.SaveChanges();
+            await petShopDbContext.SaveChangesAsync(cancellationToken);
 
             var entityResponse = new UpdateEmployeeResponse
             {
@@ -160,11 +153,11 @@ namespace PetShop.Api.Controllers
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
             logger.LogTrace("Iniciou o método Delete");
 
-            var entity = petShopDbContext.Employees.Find(id);
+            var entity = await petShopDbContext.Employees.FindAsync(new object[] { id }, cancellationToken);
 
             if (entity is null)
             {
@@ -174,7 +167,7 @@ namespace PetShop.Api.Controllers
             logger.LogTrace(LogEvents.PostEndpoint, "Finalizou o evento de Delete Employee");
 
             petShopDbContext.Employees.Remove(entity);
-            petShopDbContext.SaveChanges();
+            await petShopDbContext.SaveChangesAsync(cancellationToken);
 
             return Ok();
         }
